@@ -43,10 +43,13 @@ def download_media(url, resolution, is_audio):
         ffmpeg_available = st.session_state.ffmpeg_available
 
         if is_audio:
-            format_spec = 'bestaudio/best'
-            file_extension = '.mp3' if ffmpeg_available else '.webm'
+            format_spec = 'bestaudio[ext=m4a]/bestaudio/best' if not ffmpeg_available else 'bestaudio/best'
+            file_extension = '.m4a' if not ffmpeg_available else '.mp3'
         else:
-            format_spec = f'bestvideo[height<={resolution[:-1]}]+bestaudio/best[height<={resolution[:-1]}]' if ffmpeg_available else f'best[height<={resolution[:-1]}]'
+            if ffmpeg_available:
+                format_spec = f'bestvideo[height<={resolution[:-1]}]+bestaudio/best[height<={resolution[:-1]}]'
+            else:
+                format_spec = f'best[ext=mp4][height<={resolution[:-1]}]/best[height<={resolution[:-1]}]'
             file_extension = '.mp4'
 
         with tempfile.TemporaryDirectory() as tmpdirname:
@@ -74,7 +77,7 @@ def download_media(url, resolution, is_audio):
                             label="Download Media",
                             data=f,
                             file_name=os.path.basename(final_filename),
-                            mime="audio/mpeg" if is_audio and ffmpeg_available else "video/mp4"
+                            mime="audio/mp4" if is_audio and not ffmpeg_available else ("audio/mpeg" if is_audio else "video/mp4")
                         )
                     st.balloons()
                 else:
@@ -270,7 +273,7 @@ if 'video_info' in st.session_state and st.session_state.video_info:
     st.subheader("Video Information")
     col1, col2 = st.columns([1, 2])
     with col1:
-        st.image(st.session_state.video_info['thumbnail'], use_column_width=True)
+        st.image(st.session_state.video_info['thumbnail'], use_container_width=True)
     with col2:
         st.markdown(f"**Title:** {st.session_state.video_info['title']}")
         st.markdown(f"**Duration:** {format_duration(st.session_state.video_info['duration'])}")
